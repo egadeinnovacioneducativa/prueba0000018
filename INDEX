@@ -1,0 +1,250 @@
+<!-- Paleta Elegida: Modo Oscuro (Tailwind bg-gray-900, text-white, acentos en indigo, verde, azul, rojo) -->
+<!-- Plan de Estructura de la Aplicación: Se ha diseñado una SPA de dos "pantallas" (divs visibles/ocultos). 1) Pantalla de Selección: Una cuadrícula de tarjetas (`#card-grid`) para una navegación visual e intuitiva. 2) Pantalla de Desafío: Un área de contenido dinámico (`#situation-screen`) que presenta la situación, oculta la respuesta (fomentando la discusión) y luego la revela con un clic. Esta estructura se eligió para gamificar el aprendizaje: enfoca al usuario en una tarea a la vez y crea un "momento de revelación" que es clave para la dinámica del juego. -->
+<!-- Opciones de Visualización y Contenido: Situaciones (4) -> Meta: Presentar 4 desafíos de "prompting". -> Método: Cuadrícula de tarjetas HTML/Tailwind interactivas (JS `onclick`). -> Interacción: Clic en tarjeta. -> Justificación: Permite una selección no lineal. | Desafío Individual -> Meta: Mostrar problema y solución. -> Método: Bloques de texto HTML (`<p>`, `<blockquote>`, `<pre>`) actualizados con JS. -> Interacción: Clic en botón "Revelar". -> Justificación: Fomenta la participación antes de ver la solución. | Puntuación -> Meta: Gamificar. -> Método: Contadores de texto HTML/JS. -> Interacción: Clics en botones "+/-". -> Justificación: Añade un elemento competitivo. -->
+<!-- CONFIRMACIÓN: NO se usaron gráficos SVG. NO se usó Mermaid JS. -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Desafío del Oráculo TCREI</title>
+  <!-- 1. Cargar Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Estilo personalizado para las tarjetas y el texto de 'pre' */
+    .card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4), 0 4px 6px -2px rgba(99, 102, 241, 0.2);
+    }
+
+    /* Asegura que el prompt de bendición respete los saltos de línea y se ajuste */
+    #bendicion-prompt {
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<!-- 3. Diseño Modo Oscuro -->
+
+<body class="bg-gray-900 text-white font-sans p-6 md:p-10">
+
+  <div class="max-w-5xl mx-auto">
+    <!-- 1. Encabezado -->
+    <header class="text-center mb-8">
+      <h1 class="text-4xl md:text-5xl font-bold text-indigo-400">El Desafío del Oráculo TCREI</h1>
+      <p class="text-xl text-gray-300 mt-2">Reforzando el arte de un buen prompt</p>
+    </header>
+
+    <!-- 2. Marcador de Puntos (Scoreboard) -->
+    <div id="scoreboard" class="bg-gray-800 p-6 rounded-lg shadow-xl mb-10">
+      <h2 class="text-2xl font-bold text-center mb-4 text-indigo-300">Marcador</h2>
+      <div class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0">
+        <!-- Equipo 1 -->
+        <div class="text-center">
+          <h3 class="text-2xl font-semibold text-green-400">Equipo Creativos</h3>
+          <p id="score-team1" class="text-5xl font-bold my-2">0</p>
+          <div>
+            <button onclick="updateScore('team1', 1)" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-l-lg transition-colors">Añadir +</button>
+            <button onclick="updateScore('team1', -1)" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-r-lg transition-colors">Quitar -</button>
+          </div>
+        </div>
+        <!-- Equipo 2 -->
+        <div class="text-center">
+          <h3 class="text-2xl font-semibold text-blue-400">Equipo Productores</h3>
+          <p id="score-team2" class="text-5xl font-bold my-2">0</p>
+          <div>
+            <button onclick="updateScore('team2', 1)" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-l-lg transition-colors">Añadir +</button>
+            <button onclick="updateScore('team2', -1)" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-r-lg transition-colors">Quitar -</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Lógica de Pantallas (Contenedor Principal) -->
+    <main id="app-container">
+
+      <!-- 4. Pantalla de Selección (Visible por defecto) -->
+      <div id="selection-screen">
+        <h2 class="text-3xl font-bold text-center mb-6 text-indigo-300">Selecciona un Desafío del Oráculo</h2>
+        <div id="card-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Las tarjetas se generarán aquí por JS -->
+        </div>
+      </div>
+
+      <!-- 5. Pantalla de Situación (Oculta por defecto) -->
+      <div id="situation-screen" class="hidden bg-gray-800 p-6 md:p-10 rounded-lg shadow-2xl">
+        <!-- Título dinámico -->
+        <h2 id="situation-title" class="text-3xl font-bold text-indigo-300 mb-4"></h2>
+
+        <!-- Situación dinámica -->
+        <div class="bg-gray-700 p-6 rounded-lg mb-6">
+          <h3 class="text-xl font-semibold text-gray-100 mb-2">La Situación:</h3>
+          <p id="situation-text" class="text-lg text-gray-200 leading-relaxed"></p>
+        </div>
+
+        <!-- Botón para revelar -->
+        <div class="text-center mb-6">
+          <button id="reveal-button" class="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold py-3 px-6 rounded-lg text-lg transition-colors shadow-lg">
+            Revelar Respuestas del Oráculo
+          </button>
+        </div>
+
+        <!-- Contenedor de Respuestas (Oculto) -->
+        <div id="answers-container" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <!-- Maldición -->
+          <div class="bg-red-900/50 border border-red-700 p-6 rounded-lg">
+            <h3 class="text-2xl font-bold text-red-300 mb-3">Respuesta "Maldición" 👎</h3>
+            <p class="text-lg text-red-100 mb-4">(Resultado de un prompt débil)</p>
+            <blockquote id="maldicion-text" class="text-red-200 italic bg-red-800/60 p-4 rounded-md"></blockquote>
+          </div>
+
+          <!-- Bendición -->
+          <div class="bg-green-900/50 border border-green-700 p-6 rounded-lg">
+            <h3 class="text-2xl font-bold text-green-300 mb-3">Respuesta "Bendición" 👍</h3>
+            <p class="text-lg text-green-100 mb-4">(Resultado de un prompt TCREI fuerte)</p>
+            <div class="text-green-200 bg-green-800/60 p-4 rounded-md mb-4">
+              <span class="font-bold text-green-100">Prompt TCREI:</span>
+              <pre id="bendicion-prompt"></pre>
+            </div>
+            <blockquote id="bendicion-text" class="text-green-200 italic bg-green-800/60 p-4 rounded-md"></blockquote>
+          </div>
+        </div>
+
+        <!-- Botón para Volver -->
+        <div class="text-center mt-10">
+          <button id="back-button" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+            &larr; Volver a las Tarjetas
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 4. Interactividad (JavaScript) -->
+  <script>
+    // 6. Base de Datos (JavaScript)
+    const situations = [{
+        id: 1,
+        title: "La Junta Imposible",
+        description: "Admin/Producción: Agendar una junta compleja con internos y externos.",
+        situacion: "Necesitas agendar una junta de pre-producción la próxima semana. Es urgente. Tienes que invitar a 2 creativos internos (que siempre están ocupados) y a 3 proveedores externos (un director de foto, un sonidista y un gerente de locaciones). La junta debe durar 45 minutos.",
+        maldicion: "Asunto: Junta. Hola, ¿cuándo pueden? Saludos.",
+        bendicion_prompt: "Actúa como Asistente de Producción de La Tuna [T/C]. Redacta un correo profesional pero amigable [C] para 5 personas (2 internos, 3 externos) [C] para agendar una junta de pre-producción de 45 mins [T/C]. Es urgente y debe ser la próxima semana [C]. Propón 3 bloques de horario (Martes AM, Miércoles PM, Jueves AM) [T] y pídeles que confirmen su disponibilidad o sugieran una alternativa antes del viernes [T].",
+        bendicion_text: "Asunto: URGENTE: Coordinación Pre-Producción (Proyecto X) - La Tuna. Hola a todos, para alinear detalles clave de nuestro próximo rodaje, necesitamos..."
+      },
+      {
+        id: 2,
+        title: "El Cliente Indeciso",
+        description: "Creativos: Generar conceptos para un cliente con una restricción clave.",
+        situacion: "Un cliente (una marca de bebidas energéticas) quiere 3 ideas para un comercial de 30 segundos. Su *única* indicación fue: 'No quiero nada de deportes extremos, ya está muy visto. Queremos algo que conecte con la energía de la ciudad'.",
+        maldicion: "1. Un atleta de parkour saltando edificios. 2. Un surfista tomando una ola gigante. 3. Un escalador en una montaña.",
+        bendicion_prompt: "Actúa como Director Creativo [T]. Genera 3 conceptos para un comercial de 30 seg [T] para una bebida energética [C]. El objetivo es mostrar 'energía urbana' pero con la restricción clave de EVITAR deportes extremos [C]. Enfócate en conceptos como un artista callejero terminando un mural, un DJ en una fiesta en la azotea, o un estudiante en su examen final [C]. Formato: Título, Sinopsis de 2 líneas, Estética Visual [T].",
+        bendicion_text: "¡Aquí tienes 3 conceptos! 1. 'El Beat de la Ciudad':... 2. 'Galería de Medianoche':... 3. 'La Idea Final':..."
+      },
+      {
+        id: 3,
+        title: "El Reporte Desordenado",
+        description: "Admin/Finanzas: Estructurar datos de un párrafo desordenado en una tabla.",
+        situacion: "Acabas de recibir un email con los gastos de 3 proyectos (Comercial 'Ritmo', Video 'Amanecer', Corto 'Norte'). La información está en un párrafo largo y desordenado. Necesitas presentar esto en una tabla limpia en un correo para tu jefe.",
+        maldicion: "El Comercial 'Ritmo' tuvo gastos de catering y transporte. El Video 'Amanecer' gastó en equipo y locación. El Corto 'Norte' gastó en catering y post-producción.",
+        bendicion_prompt: "Toma el siguiente texto [R: '...texto desordenado...'] y extráelo en una tabla [T]. Las columnas deben ser: 'Nombre del Proyecto', 'Categoría de Gasto' (ej. Catering, Transporte, Equipo) y 'Monto' [T]. El objetivo es que mi jefe pueda comparar los gastos fácilmente [C].",
+        bendicion_text: "| Proyecto | Categoría | Monto |\n| :--- | :--- | :--- |\n| Comercial 'Ritmo' | Catering | $XXXX |\n| Comercial 'Ritmo' | Transporte | $YYYY |\n| ... | ... | ... |"
+      },
+      {
+        id: 4,
+        title: "La Cláusula Legal Urgente",
+        description: "Producción/Legal: Generar una cláusula específica bajo presión en un rodaje.",
+        situacion: "Estás en un rodaje y un extra acaba de llegar. El abogado no está disponible. Necesitas generar *solo* la cláusula de cesión de derechos de imagen para que la firme. Es un comercial que se usará solo en redes sociales en México por 6 meses.",
+        maldicion: "(Genera un contrato genérico de 5 páginas para uso mundial y perpetuo, totalmente inútil para la situación).",
+        bendicion_prompt: "Actúa como un asistente legal especializado en entretenimiento [T]. Redacta una cláusula de cesión de derechos de imagen [T] para un extra en un comercial [C]. Contexto clave que debe incluir: 1. Uso: Exclusivo para redes sociales (TikTok, Instagram). 2. Territorio: Solo México. 3. Duración: 6 meses a partir de hoy [C]. Tono: Legal, claro y conciso [C].",
+        bendicion_text: "CLÁUSULA DE CESIÓN DE DERECHOS: Yo, [Nombre del Extra], cedo... los derechos de uso de mi imagen... exclusivamente para su difusión en las plataformas de redes sociales (Instagram, TikTok) dentro del territorio de los Estados Unidos Mexicanos, por un periodo de seis (6) meses..."
+      }
+    ];
+    // 7. Lógica de Funciones (JavaScript)
+    // Objeto para guardar las puntuaciones
+    let scores = {
+      team1: 0,
+      team2: 0
+    };
+    // Función para actualizar el marcador
+    function updateScore(team, points) {
+      scores[team] += points;
+      if (scores[team] < 0) {
+        scores[team] = 0; // Evita puntuaciones negativas
+      }
+      document.getElementById(`score-${team}`).innerText = scores[team];
+    }
+    // Referencias a los elementos del DOM
+    const selectionScreen = document.getElementById('selection-screen');
+    const situationScreen = document.getElementById('situation-screen');
+    const cardGrid = document.getElementById('card-grid');
+    const situationTitle = document.getElementById('situation-title');
+    const situationText = document.getElementById('situation-text');
+    const revealButton = document.getElementById('reveal-button');
+    const answersContainer = document.getElementById('answers-container');
+    const maldicionText = document.getElementById('maldicion-text');
+    const bendicionPrompt = document.getElementById('bendicion-prompt');
+    const bendicionText = document.getElementById('bendicion-text');
+    const backButton = document.getElementById('back-button');
+    // Función para mostrar una situación
+    function showSituation(id) {
+      // 1. Encontrar los datos
+      const data = situations.find(s => s.id === id);
+      if (!data) return;
+      // 2. Llenar los campos
+      situationTitle.innerText = data.title;
+      situationText.innerText = data.situacion;
+      maldicionText.innerText = data.maldicion;
+      bendicionPrompt.innerText = data.bendicion_prompt;
+      // 3. Manejar texto con saltos de línea para la tabla (Situación 3)
+      if (data.id === 3) {
+        // Usamos innerHTML con <pre> para respetar el formato de la tabla
+        bendicionText.innerHTML = `<pre class="whitespace-pre-wrap font-mono text-sm">${data.bendicion_text}</pre>`;
+      } else {
+        bendicionText.innerText = data.bendicion_text;
+      }
+      // 4. Resetear la vista de respuestas
+      answersContainer.classList.add('hidden');
+      revealButton.classList.remove('hidden');
+      // 5. Cambiar de pantalla
+      selectionScreen.classList.add('hidden');
+      situationScreen.classList.remove('hidden');
+    }
+    // Función para volver a la selección
+    function showSelectionScreen() {
+      situationScreen.classList.add('hidden');
+      selectionScreen.classList.remove('hidden');
+    }
+    // Función para renderizar las tarjetas de selección
+    function renderSelectionCards() {
+      cardGrid.innerHTML = ''; // Limpiar por si acaso
+      situations.forEach(sit => {
+        const cardHTML = `
+                    <div class="card bg-gray-700 p-6 rounded-lg shadow-lg cursor-pointer hover:bg-indigo-700" onclick="showSituation(${sit.id})">
+                        <h3 class="text-2xl font-bold text-indigo-300 mb-2">${sit.title}</h3>
+                        <p class="text-gray-300">${sit.description}</p>
+                    </div>
+                `;
+        cardGrid.innerHTML += cardHTML;
+      });
+    }
+    // Listeners para los botones
+    revealButton.addEventListener('click', () => {
+      answersContainer.classList.remove('hidden');
+      revealButton.classList.add('hidden');
+    });
+    backButton.addEventListener('click', showSelectionScreen);
+    // Cargar las tarjetas iniciales cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', renderSelectionCards);
+  </script>
+</body>
+
+</html>
