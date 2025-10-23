@@ -1,7 +1,3 @@
-<!-- Paleta Elegida: Modo Oscuro (Tailwind bg-gray-900, text-white, acentos en indigo, verde, azul, rojo) -->
-<!-- Plan de Estructura de la Aplicación: Se ha diseñado una SPA de dos "pantallas" (divs visibles/ocultos). 1) Pantalla de Selección: Una cuadrícula de tarjetas (`#card-grid`) para una navegación visual e intuitiva. 2) Pantalla de Desafío: Un área de contenido dinámico (`#situation-screen`) que presenta la situación, oculta la respuesta (fomentando la discusión) y luego la revela con un clic. Esta estructura se eligió para gamificar el aprendizaje: enfoca al usuario en una tarea a la vez y crea un "momento de revelación" que es clave para la dinámica del juego. -->
-<!-- Opciones de Visualización y Contenido: Situaciones (4) -> Meta: Presentar 4 desafíos de "prompting". -> Método: Cuadrícula de tarjetas HTML/Tailwind interactivas (JS `onclick`). -> Interacción: Clic en tarjeta. -> Justificación: Permite una selección no lineal. | Desafío Individual -> Meta: Mostrar problema y solución. -> Método: Bloques de texto HTML (`<p>`, `<blockquote>`, `<pre>`) actualizados con JS. -> Interacción: Clic en botón "Revelar". -> Justificación: Fomenta la participación antes de ver la solución. | Puntuación -> Meta: Gamificar. -> Método: Contadores de texto HTML/JS. -> Interacción: Clics en botones "+/-". -> Justificación: Añade un elemento competitivo. -->
-<!-- CONFIRMACIÓN: NO se usaron gráficos SVG. NO se usó Mermaid JS. -->
 <!DOCTYPE html>
 <html lang="es">
 
